@@ -1,0 +1,26 @@
+// prisma/schema/enums.prisma
+// ─── Shared Enums ──────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  ORDERED
+  IN_PROGRESS
+  DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum FoodCategory {
+  Pizza
+  Burger
+  Sushi
+  Pasta
+  Salad
+  Dessert
+  Drink
+  Asian
+}

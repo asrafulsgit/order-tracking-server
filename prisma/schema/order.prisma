@@ -1,0 +1,20 @@
+// prisma/schema/order.prisma
+// ─── Order Model ───────────────────────────────────────────────────────────────
+
+model Order {
+  id         String      @id @default(uuid())
+  user_id    String
+  food_id    String
+  quantity   Int         @default(1)
+  total      Decimal     @db.Decimal(10, 2)
+  status     OrderStatus @default(ORDERED)
+  address    String
+  notes      String?
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+  food Food @relation(fields: [food_id], references: [id])
+
+  @@map("orders")
+}
