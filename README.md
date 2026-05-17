@@ -64,8 +64,8 @@ order-tracking/
 ### 1. Clone & Install
 
 ```bash
-git clone <repo>
-cd order-tracking
+git clone  https://github.com/asrafulsgit/order-tracking-server.git
+cd order-tracking-server
 npm install
 ```
 
@@ -79,7 +79,7 @@ cp .env.example .env
 ### 3. Run Migrations & Seed
 
 ```bash
-npm run prisma:migrate:dev   # Run DB migrations
+npm run npx prisma migrate dev   # Run DB migrations
 npm run seed                  # Seed demo data
 ```
 
@@ -219,5 +219,4 @@ Token Expired?   POST /auth/refresh  { refreshToken }  → new token pair
 | Role | Email | Password |
 |---|---|---|
 | Admin | `admin@ordertrack.com` | `password123` |
-| User | `karim@gmail.com` | `password123` |
-| User | `sara@gmail.com` | `password123` |
+| User | `karim@gmail.com` | `password123` | 
