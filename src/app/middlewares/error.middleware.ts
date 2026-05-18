@@ -21,7 +21,7 @@ export const errorHandler = (
   err: unknown,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
   // Already sent a response
   if (res.headersSent) return;
@@ -33,7 +33,7 @@ export const errorHandler = (
       err.message,
       err.statusCode,
       err.errors,
-      env.isDev ? err.stack : undefined
+      env.isDev ? err.stack : undefined,
     );
     return;
   }
@@ -42,7 +42,7 @@ export const errorHandler = (
   if (err instanceof ZodError) {
     const errors = err?.issues.map((e) => ({
       field: e.path.join("."),
-      message: e.message
+      message: e.message,
     }));
     ApiResponse.error(res, "Validation failed", 422, errors);
     return;
@@ -54,12 +54,19 @@ export const errorHandler = (
       case "P2002": {
         // Unique constraint violation
         const fields = (err.meta?.target as string[])?.join(", ") ?? "field";
-        ApiResponse.error(res, `A record with this ${fields} already exists`, 409);
+        ApiResponse.error(
+          res,
+          `A record with this ${fields} already exists`,
+          409,
+        );
         return;
       }
       case "P2025":
         // Record not found
-        ApiResponse.error(res, "Record not found", 404);
+        const message = err.meta?.modelName
+          ? `${err.meta.modelName} not found`
+          : "Record not found"; 
+        ApiResponse.error(res, message, 404);
         return;
       case "P2003":
         // Foreign key constraint failure
@@ -73,7 +80,7 @@ export const errorHandler = (
           res,
           "Database operation failed",
           500,
-          env.isDev ? [{ code: err.code, message: err.message }] : undefined
+          env.isDev ? [{ code: err.code, message: err.message }] : undefined,
         );
         return;
     }
@@ -98,18 +105,24 @@ export const errorHandler = (
   // ─── Fallback: unexpected errors ────────────────────────────────────────────
   const message = env.isProd
     ? "An unexpected error occurred"
-    : (err instanceof Error ? err.message : "Unknown error");
+    : err instanceof Error
+      ? err.message
+      : "Unknown error";
 
   ApiResponse.error(
     res,
     message,
     500,
     undefined,
-    env.isDev && err instanceof Error ? err.stack : undefined
+    env.isDev && err instanceof Error ? err.stack : undefined,
   );
 };
 
 // ─── 404 Not Found Handler ─────────────────────────────────────────────────────
-export const notFoundHandler = (req: Request, _res: Response, next: NextFunction): void => {
+export const notFoundHandler = (
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void => {
   next(ApiError.notFound(`Route ${req.method} ${req.originalUrl} not found`));
 };

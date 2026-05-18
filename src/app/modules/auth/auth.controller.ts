@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiResponse } from "../../utils/ApiResponse";
+import { setTokenCookies, clearTokenCookies } from "../../utils/cookie.utils";
 import * as authService from "./auth.service";
 import type { RegisterDto, LoginDto, RefreshTokenDto, ChangePasswordDto } from "./auth.validation";
 
@@ -14,6 +15,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 // POST /auth/login
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.login(req.body as LoginDto);
+  setTokenCookies(res, result.tokens);
   ApiResponse.success(res, result, "Login successful");
 });
 
@@ -26,6 +28,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 // POST /auth/logout
 export const logout = asyncHandler(async (req: Request, res: Response) => {
+  clearTokenCookies(res);
   await authService.logout(req.user!.id);
   ApiResponse.success(res, null, "Logged out successfully");
 });

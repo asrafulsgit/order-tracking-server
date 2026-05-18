@@ -11,7 +11,8 @@ import { asyncHandler } from "../utils/asyncHandler";
  */
 export const authenticate = asyncHandler(
   async (req: Request, _res: Response, next: NextFunction) => {
-    const token = extractBearerToken(req.headers.authorization);
+    const token =
+      extractBearerToken(req.headers.authorization) || req.cookies.accessToken;
 
     if (!token) {
       throw ApiError.unauthorized("No authentication token provided");
@@ -19,19 +20,18 @@ export const authenticate = asyncHandler(
 
     const payload = verifyAccessToken(token);
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUniqueOrThrow({
       where: { id: payload.sub },
-      select: { id: true, email: true, role: true, name: true, is_active: true },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        name: true, 
+        created_at : true,
+        updated_at : true
+      },
     });
-
-    if (!user) {
-      throw ApiError.unauthorized("User account not found");
-    }
-
-    if (!user.is_active) {
-      throw ApiError.forbidden("Your account has been deactivated. Contact support.");
-    }
-
+  
     req.user = {
       id: user.id,
       email: user.email,
@@ -40,5 +40,5 @@ export const authenticate = asyncHandler(
     };
 
     next();
-  }
+  },
 );

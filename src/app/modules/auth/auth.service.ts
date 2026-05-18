@@ -4,7 +4,11 @@ import { prisma } from "../../utils/prisma";
 import { ApiError } from "../../utils/ApiError";
 import { generateTokenPair, verifyRefreshToken } from "../../utils/jwt.utils";
 import { env } from "../../config/env.config";
-import type { RegisterDto, LoginDto, ChangePasswordDto } from "./auth.validation";
+import type {
+  RegisterDto,
+  LoginDto,
+  ChangePasswordDto,
+} from "./auth.validation";
 
 // ─── Safe user select (never expose password) ─────────────────────────────────
 const safeUserSelect = {
@@ -12,31 +16,29 @@ const safeUserSelect = {
   name: true,
   email: true,
   role: true,
-  is_active: true,
   created_at: true,
   updated_at: true,
 } as const;
 
 // ─── Register ──────────────────────────────────────────────────────────────────
 export async function register(dto: RegisterDto) {
-  const existingUser = await prisma.user.findUnique({ where: { email: dto.email } });
-  if (existingUser) throw ApiError.conflict("An account with this email already exists");
+  const existingUser = await prisma.user.findUnique({
+    where: { email: dto.email },
+  });
+  if (existingUser)
+    throw ApiError.conflict("An account with this email already exists");
 
-  const hashedPassword = await bcrypt.hash(dto.password, env.BCRYPT_SALT_ROUNDS);
+  const hashedPassword = await bcrypt.hash(
+    dto.password,
+    env.BCRYPT_SALT_ROUNDS,
+  );
 
   const user = await prisma.user.create({
     data: { name: dto.name, email: dto.email, password: hashedPassword },
     select: safeUserSelect,
   });
 
-  const tokens = generateTokenPair({ sub: user.id, email: user.email, role: user.role });
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { refreshToken: await bcrypt.hash(tokens.refreshToken, 10) },
-  });
-
-  return { user, tokens };
+  return user;
 }
 
 // ─── Login ─────────────────────────────────────────────────────────────────────
@@ -45,13 +47,13 @@ export async function login(dto: LoginDto) {
   if (!user) throw ApiError.unauthorized("Invalid email or password");
 
   const isPasswordValid = await bcrypt.compare(dto.password, user.password);
-  if (!isPasswordValid) throw ApiError.unauthorized("Invalid email or password");
+  if (!isPasswordValid)
+    throw ApiError.unauthorized("Invalid email or password");
 
-  const tokens = generateTokenPair({ sub: user.id, email: user.email, role: user.role });
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { refreshToken: await bcrypt.hash(tokens.refreshToken, 10) },
+  const tokens = generateTokenPair({
+    sub: user.id,
+    email: user.email,
+    role: user.role,
   });
 
   const { password: _, ...safeUser } = user;
@@ -63,7 +65,6 @@ export async function login(dto: LoginDto) {
 //   const payload = verifyRefreshToken(token);
 
 //   const user = await prisma.user.findUnique({ where: { id: payload.sub } });
-  
 
 //   const tokens = generateTokenPair({ sub: user.id, email: user.email, role: user.role });
 
@@ -85,11 +86,10 @@ export async function logout(userId: string) {
 
 // ─── Get Profile ───────────────────────────────────────────────────────────────
 export async function getProfile(userId: string) {
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
     select: safeUserSelect,
   });
-  if (!user) throw ApiError.notFound("User not found");
   return user;
 }
 
@@ -102,10 +102,15 @@ export async function changePassword(userId: string, dto: ChangePasswordDto) {
   if (!isValid) throw ApiError.badRequest("Current password is incorrect");
 
   if (dto.currentPassword === dto.newPassword) {
-    throw ApiError.badRequest("New password must be different from current password");
+    throw ApiError.badRequest(
+      "New password must be different from current password",
+    );
   }
 
-  const hashedPassword = await bcrypt.hash(dto.newPassword, env.BCRYPT_SALT_ROUNDS);
+  const hashedPassword = await bcrypt.hash(
+    dto.newPassword,
+    env.BCRYPT_SALT_ROUNDS,
+  );
 
   await prisma.user.update({
     where: { id: userId },
