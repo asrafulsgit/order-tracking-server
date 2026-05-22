@@ -4,9 +4,13 @@ import http from "http";
 import app from "./app";
 import { env } from "./app/config/env.config";
 import { prisma, checkDatabaseConnection } from "./app/utils/prisma";
+import { initializeSocket } from "./app/config/socket.config"; 
 
 // ─── HTTP Server ───────────────────────────────────────────────────────────────
 const server = http.createServer(app);
+
+// ─── Socket.io Initialization ──────────────────────────────────────────────────
+initializeSocket(server);
 
 // ─── Track open connections for graceful shutdown ──────────────────────────────
 let openConnections = new Set<import("net").Socket>();

@@ -4,8 +4,8 @@ import type { SignOptions } from "jsonwebtoken";
 import { env } from "../config/env.config";
 import { ApiError } from "./ApiError";
 
-export interface JwtPayload {
-  sub: string;        
+export interface JwtPayload { 
+  id : string;       
   email: string;
   role: string;
   iat?: number;

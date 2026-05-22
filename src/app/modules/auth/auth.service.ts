@@ -51,7 +51,7 @@ export async function login(dto: LoginDto) {
     throw ApiError.unauthorized("Invalid email or password");
 
   const tokens = generateTokenPair({
-    sub: user.id,
+    id: user.id,
     email: user.email,
     role: user.role,
   });
