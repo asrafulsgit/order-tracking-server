@@ -34,7 +34,7 @@ router.post("/login", validate(loginSchema), authController.login);
  * @desc    Invalidate current session (clear refresh token)
  * @access  Private
  */
-router.post("/logout", authenticate, authController.logout);
+router.get("/logout", authenticate, authController.logout);
 
 /**
  * @route   GET /api/v1/auth/me

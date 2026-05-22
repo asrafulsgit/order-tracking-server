@@ -42,13 +42,13 @@ export async function register(dto: RegisterDto) {
 }
 
 // ─── Login ─────────────────────────────────────────────────────────────────────
-export async function login(dto: LoginDto) {
+export async function login(dto: LoginDto) { 
   const user = await prisma.user.findUnique({ where: { email: dto.email } });
-  if (!user) throw ApiError.unauthorized("Invalid email or password");
+  if (!user) throw ApiError.badRequest("Invalid email or password");
 
   const isPasswordValid = await bcrypt.compare(dto.password, user.password);
   if (!isPasswordValid)
-    throw ApiError.unauthorized("Invalid email or password");
+    throw ApiError.badRequest("Invalid email or password");
 
   const tokens = generateTokenPair({
     id: user.id,
@@ -76,13 +76,6 @@ export async function login(dto: LoginDto) {
 //   return tokens;
 // }
 
-// ─── Logout ────────────────────────────────────────────────────────────────────
-export async function logout(userId: string) {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { refreshToken: null },
-  });
-}
 
 // ─── Get Profile ───────────────────────────────────────────────────────────────
 export async function getProfile(userId: string) {

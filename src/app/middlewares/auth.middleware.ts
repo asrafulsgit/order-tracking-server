@@ -21,7 +21,7 @@ export const authenticate = asyncHandler(
     const payload = verifyAccessToken(token);
 
     const user = await prisma.user.findUniqueOrThrow({
-      where: { id: payload.sub },
+      where: { id: payload.id },
       select: {
         id: true,
         email: true,

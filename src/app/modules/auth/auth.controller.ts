@@ -16,7 +16,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.login(req.body as LoginDto);
   setTokenCookies(res, result.tokens);
-  ApiResponse.success(res, result, "Login successful");
+  ApiResponse.success(res, null, "Login successful");
 });
 
 // POST /auth/refresh
@@ -28,8 +28,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
 // POST /auth/logout
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  clearTokenCookies(res);
-  await authService.logout(req.user!.id);
+  clearTokenCookies(res); 
   ApiResponse.success(res, null, "Logged out successfully");
 });
 
