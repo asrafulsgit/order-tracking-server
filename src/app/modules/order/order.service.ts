@@ -3,12 +3,22 @@ import { Prisma, OrderStatus } from "@prisma/client";
 import { prisma } from "../../utils/prisma";
 import { ApiError } from "../../utils/ApiError";
 import { buildPaginationMeta } from "../../utils/ApiResponse";
-import type { CreateOrderDto, OrderQueryDto, UpdateOrderStatusDto } from "./order.validation";
+import type {
+  CreateOrderDto,
+  OrderQueryDto,
+  UpdateOrderStatusDto,
+} from "./order.validation";
 
 // ─── Order include for rich responses ─────────────────────────────────────────
 const orderInclude = {
   food: {
-    select: { id: true, name: true, image_url: true, category: true, price: true },
+    select: {
+      id: true,
+      name: true,
+      image_url: true,
+      category: true,
+      price: true,
+    },
   },
   user: {
     select: { id: true, name: true, email: true },
@@ -22,7 +32,8 @@ const CANCELLABLE_STATUSES: OrderStatus[] = [OrderStatus.ORDERED];
 export async function placeOrder(userId: string, dto: CreateOrderDto) {
   const food = await prisma.food.findUnique({ where: { id: dto.food_id } });
   if (!food) throw ApiError.notFound("Food item not found");
-  if (!food.available) throw ApiError.badRequest(`"${food.name}" is currently unavailable`);
+  if (!food.available)
+    throw ApiError.badRequest(`"${food.name}" is currently unavailable`);
 
   const total = Number(food.price) * dto.quantity;
 
@@ -35,38 +46,46 @@ export async function placeOrder(userId: string, dto: CreateOrderDto) {
       address: dto.address,
       notes: dto.notes,
     },
-    include: orderInclude,
+    // include: orderInclude,
   });
 }
 
 // ─── Get My Orders (User) ─────────────────────────────────────────────────────
-export async function getMyOrders(userId: string, query: OrderQueryDto) {
-  const { page, limit, status, sortBy, sortOrder, from, to } = query;
-  const skip = (page - 1) * limit;
+export async function getMyOrders(userId: string, query: Record<string,any>) {
+  // const { page, limit, status, sortBy, sortOrder, from, to } = query;
+  // const skip = (page - 1) * limit;
 
-  const where: Prisma.OrderWhereInput = {
-    user_id: userId,
-    ...(status && { status }),
-    ...((from || to) && {
-      created_at: {
-        ...(from && { gte: from }),
-        ...(to && { lte: to }),
-      },
-    }),
-  };
+  // const where: Prisma.OrderWhereInput = {
+  //   user_id: userId,
+  //   ...(status && { status }),
+  //   ...((from || to) && {
+  //     created_at: {
+  //       ...(from && { gte: from }),
+  //       ...(to && { lte: to }),
+  //     },
+  //   }),
+  // };
 
-  const [orders, total] = await prisma.$transaction([
+  const [
+    orders,
+    // total
+  ] = await prisma.$transaction([
     prisma.order.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { [sortBy]: sortOrder },
+      where :{
+         user_id: userId,
+      },
+      // skip,
+      // take: limit,
+      // orderBy: { [sortBy]: sortOrder },
       include: orderInclude,
     }),
-    prisma.order.count({ where }),
+    // prisma.order.count({ where }),
   ]);
 
-  return { orders, pagination: buildPaginationMeta(total, page, limit) };
+  return {
+    orders,
+    // pagination: buildPaginationMeta(total, page, limit)
+  };
 }
 
 // ─── Get Order by ID ───────────────────────────────────────────────────────────
@@ -92,7 +111,7 @@ export async function cancelOrder(orderId: string, userId: string) {
 
   if (!CANCELLABLE_STATUSES.includes(order.status)) {
     throw ApiError.badRequest(
-      `Cannot cancel an order with status "${order.status}". Only orders in [${CANCELLABLE_STATUSES.join(", ")}] can be cancelled.`
+      `Cannot cancel an order with status "${order.status}". Only orders in [${CANCELLABLE_STATUSES.join(", ")}] can be cancelled.`,
     );
   }
 
@@ -105,37 +124,43 @@ export async function cancelOrder(orderId: string, userId: string) {
 
 // ─── Get User Dashboard Metadata ──────────────────────────────────────────────
 export async function getUserDashboard(userId: string) {
-  const [totalOrders, statusBreakdown, recentOrders, totalSpent] = await prisma.$transaction([
-    prisma.order.count({ where: { user_id: userId } }),
+  const [totalOrders, statusBreakdown, recentOrders, totalSpent] =
+    await prisma.$transaction([
+      prisma.order.count({ where: { user_id: userId } }),
 
-    prisma.order.groupBy({
-      by: ["status"],
-      where: { user_id: userId },
-      _count: { id: true },
-    }),
+      prisma.order.groupBy({
+        by: ["status"],
+        where: { user_id: userId },
+        _count: { id: true },
+      }),
 
-    prisma.order.findMany({
-      where: { user_id: userId },
-      take: 5,
-      orderBy: { created_at: "desc" },
-      include: { food: { select: { id: true, name: true, image_url: true } } },
-    }),
+      prisma.order.findMany({
+        where: { user_id: userId },
+        take: 5,
+        orderBy: { created_at: "desc" },
+        include: {
+          food: { select: { id: true, name: true, image_url: true } },
+        },
+      }),
 
-    prisma.order.aggregate({
-      where: { user_id: userId, status: { not: OrderStatus.CANCELLED } },
-      _sum: { total: true },
-    }),
-  ]);
+      prisma.order.aggregate({
+        where: { user_id: userId, status: { not: OrderStatus.CANCELLED } },
+        _sum: { total: true },
+      }),
+    ]);
 
   const statusMap = Object.fromEntries(
-    statusBreakdown.map((s) => [s.status, s._count.id])
+    statusBreakdown.map((s) => [s.status, s._count.id]),
   );
 
   return {
     summary: {
       totalOrders,
       totalSpent: Number(totalSpent._sum.total ?? 0),
-      activeOrders: (statusMap["ORDERED"] ?? 0) + (statusMap["IN_PROGRESS"] ?? 0) + (statusMap["DELIVERY"] ?? 0),
+      activeOrders:
+        (statusMap["ORDERED"] ?? 0) +
+        (statusMap["IN_PROGRESS"] ?? 0) +
+        (statusMap["DELIVERY"] ?? 0),
       completedOrders: statusMap["COMPLETED"] ?? 0,
       cancelledOrders: statusMap["CANCELLED"] ?? 0,
     },
@@ -145,44 +170,50 @@ export async function getUserDashboard(userId: string) {
 }
 
 // ─── Admin: Get All Orders ────────────────────────────────────────────────────
-export async function getAllOrders(query: OrderQueryDto) {
-  const { page, limit, status, search, sortBy, sortOrder, from, to } = query;
-  const skip = (page - 1) * limit;
+export async function getAllOrders(query: Record<string, any>) {
+  // const { page, limit, status, search, sortBy, sortOrder, from, to } = query;
+  // const skip = (page - 1) * limit;
+  // console.log(query)
+  // const where: Prisma.OrderWhereInput = {
+  //   ...(status && { status }),
+  //   ...(search && {
+  //     OR: [
+  //       { address: { contains: search, mode: "insensitive" } },
+  //       { food: { name: { contains: search, mode: "insensitive" } } },
+  //       { user: { name: { contains: search, mode: "insensitive" } } },
+  //       { user: { email: { contains: search, mode: "insensitive" } } },
+  //     ],
+  //   }),
+  //   ...((from || to) && {
+  //     created_at: {
+  //       ...(from && { gte: from }),
+  //       ...(to && { lte: to }),
+  //     },
+  //   }),
+  // };
 
-  const where: Prisma.OrderWhereInput = {
-    ...(status && { status }),
-    ...(search && {
-      OR: [
-        { address: { contains: search, mode: "insensitive" } },
-        { food: { name: { contains: search, mode: "insensitive" } } },
-        { user: { name: { contains: search, mode: "insensitive" } } },
-        { user: { email: { contains: search, mode: "insensitive" } } },
-      ],
-    }),
-    ...((from || to) && {
-      created_at: {
-        ...(from && { gte: from }),
-        ...(to && { lte: to }),
-      },
-    }),
-  };
-
-  const [orders, total] = await prisma.$transaction([
+  const [
+    orders,
+    // total
+  ] = await prisma.$transaction([
     prisma.order.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { [sortBy]: sortOrder },
+      // where,
+      // skip,
+      // take: limit,
+      // orderBy: { [sortBy]: sortOrder },
       include: orderInclude,
     }),
-    prisma.order.count({ where }),
+    // prisma.order.count({ where }),
   ]);
 
-  return { orders, pagination: buildPaginationMeta(total, page, limit) };
+  return { orders };
 }
 
 // ─── Admin: Update Order Status ───────────────────────────────────────────────
-export async function updateOrderStatus(orderId: string, dto: UpdateOrderStatusDto) {
+export async function updateOrderStatus(
+  orderId: string,
+  dto: UpdateOrderStatusDto,
+) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw ApiError.notFound("Order not found");
 

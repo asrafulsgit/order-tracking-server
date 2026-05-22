@@ -13,11 +13,13 @@ export const placeOrder = asyncHandler(async (req: Request, res: Response) => {
 
 // GET /orders/my
 export const getMyOrders = asyncHandler(async (req: Request, res: Response) => {
-  const { orders, pagination } = await orderService.getMyOrders(
+  const { orders, 
+    // pagination 
+  } = await orderService.getMyOrders(
     req.user!.id,
-    req.query as unknown as OrderQueryDto
+    req.query 
   );
-  ApiResponse.paginated(res, orders, pagination, "Orders fetched successfully");
+  ApiResponse.success(res, orders, "Orders fetched successfully");
 });
 
 // GET /orders/dashboard
@@ -42,10 +44,10 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
 
 // GET /orders  [Admin]
 export const getAllOrders = asyncHandler(async (req: Request, res: Response) => {
-  const { orders, pagination } = await orderService.getAllOrders(
-    req.query as unknown as OrderQueryDto
+  const { orders } = await orderService.getAllOrders(
+    req.query 
   );
-  ApiResponse.paginated(res, orders, pagination, "All orders fetched successfully");
+   ApiResponse.success(res, orders, "All orders fetched successfully"); 
 });
 
 // PATCH /orders/:id/status  [Admin]

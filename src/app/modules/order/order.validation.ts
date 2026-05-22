@@ -35,7 +35,7 @@ export const updateOrderStatusSchema = z.object({
 export const orderQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(50).default(10),
-  status: z.nativeEnum(OrderStatus).optional(),
+  status: z.enum(OrderStatus).optional(),
   search: z.string().trim().optional(), // search by address or food name
   sortBy: z.enum(["created_at", "total", "status"]).default("created_at"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),

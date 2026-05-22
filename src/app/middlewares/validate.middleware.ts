@@ -15,7 +15,12 @@ export const validate =
     try {
       const parsed = schema.parse(req[target]);
       // Replace with sanitized/coerced values from Zod
-      (req)[target] = parsed;
+      if (target === "query") {
+        // req.query is read-only, so use Object.assign to update it
+        Object.assign(req.query, parsed);
+      } else {
+        (req as any)[target] = parsed;
+      }
       next();
     } catch (err) {
       if (err instanceof ZodError) {

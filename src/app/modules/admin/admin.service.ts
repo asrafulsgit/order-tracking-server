@@ -41,7 +41,7 @@ export async function getAdminDashboard() {
     recentOrders,
 
     // Active users (placed order in last 30 days)
-    activeUsers,
+    // activeUsers,
   ] = await prisma.$transaction([
     prisma.user.count({ where: { role: "USER" } }),
     prisma.food.count(),
@@ -128,7 +128,7 @@ export async function getAdminDashboard() {
   return {
     overview: {
       totalUsers,
-      activeUsers,
+      // activeUsers,
       totalFoods,
       totalOrders,
       todayOrders,

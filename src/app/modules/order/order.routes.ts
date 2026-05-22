@@ -2,7 +2,7 @@
 import { Router } from "express";
 import * as orderController from "./order.controller";
 import { authenticate } from "../../middlewares/auth.middleware";
-import { adminOnly } from "../../middlewares/role.middleware";
+import { adminOnly, userOnly } from "../../middlewares/role.middleware";
 import { validate } from "../../middlewares/validate.middleware";
 import {
   createOrderSchema,
@@ -21,7 +21,7 @@ router.use(authenticate);
  * @desc    Place a new order
  * @access  Private (User)
  */
-router.post("/", validate(createOrderSchema), orderController.placeOrder);
+router.post("/", userOnly, validate(createOrderSchema), orderController.placeOrder);
 
 /**
  * @route   GET /api/v1/orders/my
@@ -31,7 +31,8 @@ router.post("/", validate(createOrderSchema), orderController.placeOrder);
  */
 router.get(
   "/my",
-  validate(orderQuerySchema, "query"),
+  userOnly,
+  // validate(orderQuerySchema, "query"),
   orderController.getMyOrders,
 );
 
@@ -66,7 +67,7 @@ router.patch("/:id/cancel", orderController.cancelOrder);
 router.get(
   "/",
   adminOnly,
-  validate(orderQuerySchema, "query"),
+  // validate(orderQuerySchema, "query"),
   orderController.getAllOrders,
 );
 
