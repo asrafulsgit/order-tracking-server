@@ -1,8 +1,9 @@
 // src/app/config/socket.config.ts
-import { Server } from "socket.io";
-import { env } from "./env.config"; 
+import { Server, Socket } from "socket.io";
+import { Server as HttpServer } from "http";
+import { env } from "./env.config";
 import { verifyAccessToken } from "../utils/jwt.utils";
- 
+import { Role } from "@prisma/client";
 
 /**
  * Socket.io Configuration with production-grade settings
@@ -29,7 +30,7 @@ export const getSocketConfig = () => {
 /**
  * Extract access token from cookies or Authorization header
  */
-const extractAccessToken = (socket: any): string | null => {
+const extractAccessToken = (socket: Socket): string | null => {
   // Try to get token from Authorization header (Bearer token)
   const authHeader = socket.handshake.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -42,7 +43,7 @@ const extractAccessToken = (socket: any): string | null => {
     const cookiePairs = cookies.split("; ");
     const accessTokenCookie = cookiePairs.find(
       (cookie: string) =>
-        cookie.startsWith("accessToken=") || cookie.startsWith("access_token=")
+        cookie.startsWith("accessToken=") || cookie.startsWith("access_token="),
     );
     if (accessTokenCookie) {
       return accessTokenCookie.split("=")[1];
@@ -57,7 +58,7 @@ let io: Server;
 /**
  * Initialize Socket.io with configuration
  */
-export const initializeSocket = (server: any) => {
+export const initializeSocket = (server: HttpServer) => {
   io = new Server(server, getSocketConfig());
   console.log("✓ Socket.io initialized with server");
 
@@ -79,7 +80,7 @@ export const initializeSocket = (server: any) => {
       // Attach user info to socket for use in event handlers
       socket.userId = decoded.id;
       socket.userRole = decoded.role;
-      socket.userEmail = decoded.email; 
+      socket.userEmail = decoded.email;
 
       next();
     } catch (error) {
@@ -87,12 +88,32 @@ export const initializeSocket = (server: any) => {
     }
   });
 
-  return io;
+  io.on("connection", (socket) => {
+    console.log(`Connected: ${socket.userEmail}`);
+
+    // Join user room
+    if (socket.userRole === Role.USER) {
+      socket.join(socket.userId);
+      console.log(`User joined spacific room`);
+    }
+    
+    // Join admin room
+    if (socket.userRole === Role.ADMIN) {
+      socket.join("admins");
+      console.log(`Admin joined admins room`);
+    }
+
+    socket.on("disconnect", () => {
+      console.log(`Disconnected: ${socket.userEmail}`);
+    });
+  });
 };
 
 export const getIO = (): Server => {
   if (!io) {
-    throw new Error("Socket.io has not been initialized. Call setIO(io) first.");
+    throw new Error(
+      "Socket.io has not been initialized. Call setIO(io) first.",
+    );
   }
   return io;
 };

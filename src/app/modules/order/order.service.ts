@@ -8,6 +8,7 @@ import type {
   OrderQueryDto,
   UpdateOrderStatusDto,
 } from "./order.validation";
+import { getIO } from "../../config/socket.config";
 
 // ─── Order include for rich responses ─────────────────────────────────────────
 const orderInclude = {
@@ -37,7 +38,7 @@ export async function placeOrder(userId: string, dto: CreateOrderDto) {
 
   const total = Number(food.price) * dto.quantity;
 
-  return prisma.order.create({
+  const order = await prisma.order.create({
     data: {
       user_id: userId,
       food_id: dto.food_id,
@@ -48,10 +49,17 @@ export async function placeOrder(userId: string, dto: CreateOrderDto) {
     },
     // include: orderInclude,
   });
+
+  const io = getIO();
+
+  // Notify admins only
+  io.to("admins").emit("order:created", order);
+
+  return order;
 }
 
 // ─── Get My Orders (User) ─────────────────────────────────────────────────────
-export async function getMyOrders(userId: string, query: Record<string,any>) {
+export async function getMyOrders(userId: string, query: Record<string, any>) {
   // const { page, limit, status, sortBy, sortOrder, from, to } = query;
   // const skip = (page - 1) * limit;
 
@@ -71,8 +79,8 @@ export async function getMyOrders(userId: string, query: Record<string,any>) {
     // total
   ] = await prisma.$transaction([
     prisma.order.findMany({
-      where :{
-         user_id: userId,
+      where: {
+        user_id: userId,
       },
       // skip,
       // take: limit,
@@ -224,9 +232,16 @@ export async function updateOrderStatus(
     throw ApiError.badRequest("Cannot update a completed order");
   }
 
-  return prisma.order.update({
+  const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { status: dto.status },
     include: orderInclude,
   });
+
+  const io = getIO();
+
+  // Notify order owner only
+  io.to(order.user_id).emit("order:status-updated", updatedOrder);
+
+  return updatedOrder
 }
