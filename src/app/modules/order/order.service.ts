@@ -48,7 +48,7 @@ export async function placeOrder(userId: string, dto: CreateOrderDto) {
       address: dto.address,
       notes: dto.notes,
     },
-    // include: orderInclude,
+    include: orderInclude,
   });
 
   const io = getIO();
