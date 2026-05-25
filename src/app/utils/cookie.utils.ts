@@ -46,12 +46,12 @@ export function setTokenCookies(
   }
 
   // Set refresh token cookie (7 days)
-  if (tokens.refreshToken) {
-    res.cookie("refreshToken", tokens.refreshToken, {
-      ...cookieOptions,
-      maxAge: TOKEN_AGES.REFRESH_TOKEN * 1000, // Convert to milliseconds
-    });
-  }
+  // if (tokens.refreshToken) {
+  //   res.cookie("refreshToken", tokens.refreshToken, {
+  //     ...cookieOptions,
+  //     maxAge: TOKEN_AGES.REFRESH_TOKEN * 1000, // Convert to milliseconds
+  //   });
+  // }
 }
 
 // ─── Clear Token Cookies ───────────────────────────────────────────────────────

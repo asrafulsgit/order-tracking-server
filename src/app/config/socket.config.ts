@@ -72,7 +72,7 @@ export const initializeSocket = (server: HttpServer) => {
       }
 
       // Verify JWT token
-      const decoded = verifyAccessToken(token);
+      const decoded = verifyAccessToken(token); 
       if (!decoded) {
         return next(new Error("Invalid or expired access token"));
       }
@@ -89,18 +89,18 @@ export const initializeSocket = (server: HttpServer) => {
   });
 
   io.on("connection", (socket) => {
-    console.log(`Connected: ${socket.userEmail}`);
+    // console.log(`Connected: ${socket.userEmail}`);
 
     // Join user room
     if (socket.userRole === Role.USER) {
       socket.join(socket.userId);
-      console.log(`User joined spacific room`);
+      console.log(`User joined ${socket.userId}`);
     }
     
     // Join admin room
     if (socket.userRole === Role.ADMIN) {
       socket.join("admins");
-      console.log(`Admin joined admins room`);
+      console.log(`Admin joined ${socket.userId}`);
     }
 
     socket.on("disconnect", () => {

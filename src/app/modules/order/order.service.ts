@@ -19,6 +19,7 @@ const orderInclude = {
       image_url: true,
       category: true,
       price: true,
+      description: true,
     },
   },
   user: {
@@ -243,5 +244,5 @@ export async function updateOrderStatus(
   // Notify order owner only
   io.to(order.user_id).emit("order:status-updated", updatedOrder);
 
-  return updatedOrder
+  return updatedOrder;
 }
