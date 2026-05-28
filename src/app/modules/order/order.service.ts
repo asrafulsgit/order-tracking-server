@@ -243,6 +243,7 @@ export async function updateOrderStatus(
 
   // Notify order owner only
   io.to(order.user_id).emit("order:status-updated", updatedOrder);
+  io.to("admins").emit("order:status-updated", updatedOrder);
 
   return updatedOrder;
 }
